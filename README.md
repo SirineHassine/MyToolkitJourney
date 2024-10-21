@@ -5,12 +5,6 @@ Welcome to the **MyToolkitJourney** repository! This project is designed to be a
 ## Table of Contents
 - [About the Project](#about-the-project)
 - [Features](#features)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Folder Structure](#folder-structure)
-- [Contributing](#contributing)
-- [License](#license)
-- [Contact](#contact)
 
 ## About the Project
 The **DevOps Toolkit** is a collection of scripts, configurations, and automations that assist in the management and operation of modern infrastructure. It focuses on making repetitive tasks easier and providing a central place for useful DevOps tools and best practices.
