@@ -1,0 +1,132 @@
+pipeline {
+    
+    agent any
+    /*
+    // Maven tool definition, commented out. Can be used to specify the Maven version.
+    tools {
+        maven "maven3"
+    }
+    */
+    environment {
+        // Define Nexus configuration parameters for artifact repository
+        NEXUS_VERSION = "nexus3"
+        NEXUS_PROTOCOL = "http"
+        NEXUS_URL = "172.31.40.209:8081"  // Nexus server URL
+        NEXUS_REPOSITORY = "vprofile-release"  // Nexus repository name
+        NEXUS_REPO_ID    = "vprofile-release"  // Nexus repository ID
+        NEXUS_CREDENTIAL_ID = "nexuslogin"  // Credential ID for Nexus login
+        ARTVERSION = "${env.BUILD_ID}"  // Use the Jenkins build ID as the artifact version
+    }
+    
+    stages {
+        
+        stage('BUILD') {
+            steps {
+                // Execute Maven build and skip tests
+                sh 'mvn clean install -DskipTests'
+            }
+            post {
+                success {
+                    // Archive the generated WAR file if build is successful
+                    echo 'Now Archiving...'
+                    archiveArtifacts artifacts: '**/target/*.war'
+                }
+            }
+        }
+
+        stage('UNIT TEST') {
+            steps {
+                // Run Maven unit tests
+                sh 'mvn test'
+            }
+        }
+
+        stage('INTEGRATION TEST') {
+            steps {
+                // Run Maven integration tests, skipping unit tests
+                sh 'mvn verify -DskipUnitTests'
+            }
+        }
+
+        stage ('CODE ANALYSIS WITH CHECKSTYLE') {
+            steps {
+                // Run code analysis using Checkstyle plugin
+                sh 'mvn checkstyle:checkstyle'
+            }
+            post {
+                success {
+                    // Notify that Checkstyle analysis has been completed
+                    echo 'Generated Analysis Result'
+                }
+            }
+        }
+
+        stage('CODE ANALYSIS with SONARQUBE') {
+          
+          environment {
+             // Specify the SonarQube scanner tool
+             scannerHome = tool 'sonarscanner4'
+          }
+
+          steps {
+            // Run SonarQube analysis on the project
+            withSonarQubeEnv('sonar-pro') {
+               sh '''${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=vprofile \
+                   -Dsonar.projectName=vprofile-repo \
+                   -Dsonar.projectVersion=1.0 \
+                   -Dsonar.sources=src/ \
+                   -Dsonar.java.binaries=target/test-classes/com/visualpathit/account/controllerTest/ \
+                   -Dsonar.junit.reportsPath=target/surefire-reports/ \
+                   -Dsonar.jacoco.reportsPath=target/jacoco.exec \
+                   -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml'''
+            }
+
+            // Set a timeout to wait for the quality gate result
+            timeout(time: 10, unit: 'MINUTES') {
+               waitForQualityGate abortPipeline: true
+            }
+          }
+        }
+
+        stage("Publish to Nexus Repository Manager") {
+            steps {
+                script {
+                    // Read the Maven POM file
+                    pom = readMavenPom file: "pom.xml";
+                    // Find the generated artifact (WAR file) based on packaging
+                    filesByGlob = findFiles(glob: "target/*.${pom.packaging}");
+                    echo "${filesByGlob[0].name} ${filesByGlob[0].path} ${filesByGlob[0].directory} ${filesByGlob[0].length} ${filesByGlob[0].lastModified}"
+                    artifactPath = filesByGlob[0].path;
+                    artifactExists = fileExists artifactPath;
+                    if (artifactExists) {
+                        // If the artifact exists, publish it to Nexus
+                        echo "*** File: ${artifactPath}, group: ${pom.groupId}, packaging: ${pom.packaging}, version ${pom.version} ARTVERSION";
+                        nexusArtifactUploader(
+                            nexusVersion: NEXUS_VERSION,
+                            protocol: NEXUS_PROTOCOL,
+                            nexusUrl: NEXUS_URL,
+                            groupId: pom.groupId,
+                            version: ARTVERSION,
+                            repository: NEXUS_REPOSITORY,
+                            credentialsId: NEXUS_CREDENTIAL_ID,
+                            artifacts: [
+                                [artifactId: pom.artifactId,
+                                classifier: '',
+                                file: artifactPath,
+                                type: pom.packaging],
+                                [artifactId: pom.artifactId,
+                                classifier: '',
+                                file: "pom.xml",
+                                type: "pom"]
+                            ]
+                        );
+                    } 
+                    else {
+                        // Error if the artifact file is not found
+                        error "*** File: ${artifactPath}, could not be found";
+                    }
+                }
+            }
+        }
+    }
+}
