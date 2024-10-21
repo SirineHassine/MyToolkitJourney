@@ -1,0 +1,19 @@
+
+# Vagrantfile pour configurer un serveur MariaDB 
+Vagrant.configure("2") do |config|
+    config.hostmanager.enabled = true 
+    config.hostmanager.manage_host = true
+    
+  ### DB vm  ####
+  # call the VM  "db01". 
+    config.vm.define "db01" do |db01|
+      db01.vm.box = "eurolinux-vagrant/centos-stream-9"
+      db01.vm.hostname = "db01"
+      db01.vm.network "private_network", ip: "192.168.56.15"
+      db01.vm.provider "virtualbox" do |vb|
+       vb.memory = "600"
+     end
+      db01.vm.provision "shell", path: "maria.sh"   
+    end
+
+end

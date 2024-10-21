@@ -1,0 +1,1 @@
+{"rsync":{"/vagrant":{"type":"rsync","guestpath":"/vagrant","hostpath":"C:/Users/sirin/OneDrive/Bureau/Formation/myrepo/MyToolkitJourney/Vagrant/Tomcat/CentOs","disabled":false,"__vagrantfile":true,"owner":"vagrant","group":"vagrant"}}}
