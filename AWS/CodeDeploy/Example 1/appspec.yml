@@ -1,0 +1,45 @@
+version: 0.0
+os: linux
+files:
+  - source: /
+    destination: /usr/local/myapp
+
+  # Optionally exclude specific files
+  - source: /config/.env
+    destination: /usr/local/myapp/.env
+
+hooks:
+  ApplicationStop:
+    - location: scripts/stop_server.sh
+      timeout: 300
+      runas: root
+
+  BeforeInstall:
+    - location: scripts/install_dependencies.sh
+      timeout: 300
+      runas: root
+
+  AfterInstall:
+    - location: scripts/start_server.sh
+      timeout: 300
+      runas: root
+
+  ValidateService:
+    - location: scripts/validate_service.sh
+      timeout: 300
+      runas: root
+
+  AfterAllowTraffic:
+    - location: scripts/post_deployment.sh
+      timeout: 300
+      runas: root
+
+  ApplicationStart:
+    - location: scripts/log_deployment.sh
+      timeout: 300
+      runas: root
+
+  Rollback:
+    - location: scripts/rollback.sh
+      timeout: 300
+      runas: root

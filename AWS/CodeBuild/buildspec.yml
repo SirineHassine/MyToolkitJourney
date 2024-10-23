@@ -1,0 +1,51 @@
+version: 0.2
+
+env:
+  variables:
+    # Define environment variables
+    NODE_ENV: production
+    APP_VERSION: "1.0.0"
+
+phases:
+  install:
+    runtime-versions:
+      # Specify runtime versions (e.g., Node.js)
+      nodejs: 14
+    commands:
+      # Commands to run during the install phase
+      - echo "Installing dependencies..."
+      - npm install
+
+  pre_build:
+    commands:
+      # Commands to run before the build phase
+      - echo "Running pre-build scripts..."
+      - npm run lint
+
+  build:
+    commands:
+      # Commands to run during the build phase
+      - echo "Building the application..."
+      - npm run build
+
+  post_build:
+    commands:
+      # Commands to run after the build phase
+      - echo "Running tests..."
+      - npm test
+      - echo "Build completed successfully!"
+
+artifacts:
+  files:
+    # Specify which files to include in the build artifacts
+    - build/**/*
+    - package.json
+    - README.md
+
+  # Optionally specify the base directory for the artifacts
+  base-directory: build
+
+# Define cache settings for speeding up the build process
+cache:
+  paths:
+    - node_modules/**/*

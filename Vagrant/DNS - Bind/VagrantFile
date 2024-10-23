@@ -1,0 +1,56 @@
+Vagrant.configure("2") do |config|
+  # DNS server configuration
+  config.vm.define "dns-server" do |dns|
+    dns.vm.box = "ubuntu/bionic64"
+    dns.vm.network "private_network", ip: "192.168.56.19"
+
+    dns.vm.provision "shell", inline: <<-SHELL
+      # Update packages
+      sudo apt-get update
+
+      # Install BIND9 and its utilities
+      sudo apt-get install -y bind9 bind9utils bind9-doc
+
+      # Create the zones directory if it doesn't already exist
+      sudo mkdir -p /etc/bind/zones
+
+      # Configure BIND for the my-app.com zone
+      sudo tee /etc/bind/named.conf.local > /dev/null <<EOF
+zone "my-app.com" {
+    type master;
+    file "/etc/bind/zones/db.my-app.com";
+};
+EOF
+
+      # Create the zone file for my-app.com
+      sudo tee /etc/bind/zones/db.my-app.com > /dev/null <<'EOF'
+$TTL    604800
+@       IN      SOA     ns.my-app.com. root.my-app.com. (
+                              2         ; Serial
+                         604800         ; Refresh
+                          86400         ; Retry
+                        2419200         ; Expire
+                         604800 )       ; Negative Cache TTL
+;
+@       IN      NS      ns.my-app.com.
+ns      IN      A       192.168.56.19
+www     IN      A       192.168.56.12
+EOF
+
+      # Configure the forwarders in named.conf.options
+      sudo sed -i '/^\/\/ forwarders {/a\\tforwarders { 8.8.8.8; };' /etc/bind/named.conf.options
+
+      # Check the BIND configuration
+      sudo named-checkconf
+      sudo named-checkzone my-app.com /etc/bind/zones/db.my-app.com
+
+      # Restart BIND to apply the changes
+      sudo systemctl restart bind9
+      sudo systemctl enable bind9
+
+    SHELL
+
+    dns.vm.hostname = "dns-server"
+  end
+
+end

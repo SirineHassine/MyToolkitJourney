@@ -1,0 +1,21 @@
+# Vagrantfile pour configurer un serveur Apache sur Ubuntu
+Vagrant.configure("2") do |config|
+    # Utiliser une box Ubuntu
+    config.vm.box = "ubuntu/focal64"
+
+    # Définir le nom d'hôte de la VM
+    config.vm.hostname = "app02"
+    
+    # Configurer le réseau privé avec une IP statique
+    config.vm.network "private_network", ip: "192.168.56.13"
+    
+    # Configuration du fournisseur VirtualBox
+    config.vm.provider "virtualbox" do |vb|
+      vb.memory = "1024" # Allouer 1024 Mo de mémoire
+      vb.cpus = 1       # Allouer 1 CPU
+    end
+
+    # Script de provisioning pour installer Apache et configurer le site
+    config.vm.provision "shell", path: "via package manager/tomcat_ubuntu_apt.sh"
+    # config.vm.provision "shell", path: "Manual/tomcat_ubuntu_manual.sh"
+end
