@@ -1,0 +1,24 @@
+AWSTemplateFormatVersion: 2010-09-09
+Resources:
+  OrdersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: AuthorsTable_prod
+      AttributeDefinitions:
+        - AttributeName: "AuthorName"
+          AttributeType: "S"
+        - AttributeName: "BookTitle"
+          AttributeType: "S"
+      KeySchema:
+        - AttributeName: "AuthorName"
+          KeyType: "HASH"
+        - AttributeName: "BookTitle"
+          KeyType: "RANGE"
+      TimeToLiveSpecification:
+        AttributeName: "ExpirationTime"
+        Enabled: true
+      ProvisionedThroughput:
+        ReadCapacityUnits: "5"
+        WriteCapacityUnits: "5"
+    DependsOn:
+      - DynamoDBQueryPolicy

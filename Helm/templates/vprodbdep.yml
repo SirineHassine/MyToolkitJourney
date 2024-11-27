@@ -1,24 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: vprodb
+  name: myresumedb
   labels:
-    app: vprodb
+    app: myresumedb
 spec:
   selector:
     matchLabels:
-      app: vprodb
+      app: myresumedb
   replicas: 1
   template:
     metadata:
       labels:
-        app: vprodb
+        app: myresumedb
     spec:
       containers:
-      - name: vprodb
-        image: sirinehassine/vprofiledb 
+      - name: myresumedb
+        image: sirinehassine/myresumedb 
         ports:
-        - name: vprodb-port
+        - name: myresumedb-port
           containerPort: 3306
         env: 
          - name: MYSQL_ROOT_PASSWORD
@@ -26,7 +26,5 @@ spec:
              secretKeyRef:
                name: app-secret
                key: db-pass
-#        env:
-#         - name: MYSQL_ROOT_PASSWORD
-#           value: "vprodbpass"
+
 
