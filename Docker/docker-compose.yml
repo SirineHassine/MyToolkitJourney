@@ -1,40 +1,106 @@
 version: '3.8'
 services:
-  vprodb:
-    image: sirinehassine/vprofiledb
+  myresumedb:
+    container_name: myresumedb
     build:
-      context: ./javaapi
+      context: ./db
+    #image: sirinehassine/myresumedb
+    image: 124355639478.dkr.ecr.us-east-2.amazonaws.com/myresumedb
     ports:
       - "3306:3306"
     volumes:
-      - vprodbdata:/var/lib/mysql
+      - myresumedbdata:/var/lib/mysql
     environment:
-      - MYSQL_ROOT_PASSWORD=vprodbpass
+        MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+        MYSQL_DATABASE: ${MYSQL_DATABASE}
+        TZ: ${TZ}
+    healthcheck:
+      test: ["CMD", "mysql", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}", "--execute", "SHOW DATABASES;"]
+      interval: 10s
+      retries: 5
+      timeout: 5s
 
-  vprocache01:
-    image: memcached
-    ports:
-      - "11211:11211"
-
-  vpromq01:
-    image: rabbitmq
-    ports:
-      - "15672:15672"
-    environment:
-      - RABBITMQ_DEFAULT_USER=guest
-      - RABBITMQ_DEFAULT_PASS=guest
-
-  vproapp:
-    image: sirinehassine/vprofileapp
+  myresumeapp:
+    container_name: myresumeapp
+    build:
+      context: ./app
+    #image: sirinehassine/myresumeapp
+    image: 124355639478.dkr.ecr.us-east-2.amazonaws.com/myresumeapp
     ports:
       - "8080:8080"
-    volumes: 
-      - vproappdata:/usr/local/tomcat/webapps
+    volumes:
+      - myresumeappdata:/usr/local/tomcat/webapps
+    environment:
+      MYSQL_HOST: ${MYSQL_HOST}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MAIL_HOST: ${MAIL_HOST}
+      MAIL_PORT: ${MAIL_PORT}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_PROTOCOL: ${MAIL_PROTOCOL}
+      MAIL_DEBUG: ${MAIL_DEBUG}
+      MAIL_TO: ${MAIL_TO}
 
-  vproweb:
-    image: sirinehassine/vprofileweb
+    depends_on:
+      myresumedb:
+        condition: service_healthy
+    healthcheck:
+        test: ["CMD", "curl", "http://${APP_HOST}:8080"]
+        interval: 10s
+        retries: 5
+        timeout: 5s
+
+  myresumeweb:
+    container_name: myresumeweb
+    build:
+      context: ./web
+    #image: sirinehassine/myresumeweb
+    image: 124355639478.dkr.ecr.us-east-2.amazonaws.com/myresumeweb
+    depends_on:
+      myresumeapp:
+            condition: service_healthy
     ports:
       - "80:80"
+      - "443:443"
+    restart: always
+    volumes:
+      - myresumewebdata:/etc/nginx/conf.d/ #:ro
+      - myresumecertdata:/var/www/certbot/:ro
+      - myresumecertconf:/etc/nginx/ssl/:ro
+    environment:
+      ENABLE_SSL: ${ENABLE_SSL}
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://${APP_HOST}"]
+      interval: 10s
+      retries: 5
+      timeout: 3s
+
+  certbot:
+    image: certbot/certbot:latest
+    container_name: certbot
+    volumes:
+      - myresumecertdata:/var/www/certbot
+      - myresumecertconf:/etc/letsencrypt
+    entrypoint: >
+         /bin/sh -c
+         "if [ \"$ENABLE_CERTBOT\" = \"true\" ]; then
+           certbot renew --webroot --webroot-path=/var/www/certbot --quiet || 
+           certbot certonly --webroot --webroot-path=/var/www/certbot --agree-tos --email sirine.hassine14@gmail.com -d www.sirine-hassine.fr;
+         else
+           echo 'Certbot disabled. Exiting.';
+           exit 0;
+         fi"
+    #command: certonly --webroot --webroot-path=/var/www/certbot --agree-tos --email sirine.hassine14@gmail.com -d www.sirine-hassine.fr
+    depends_on:
+      myresumeweb:
+            condition: service_healthy
+
 volumes:
-  vprodbdata: {}
-  vproappdata: {}
+    myresumedbdata: {}
+    myresumeappdata: {}
+    myresumewebdata: {}
+    myresumecertdata: {}
+    myresumecertconf: {}
