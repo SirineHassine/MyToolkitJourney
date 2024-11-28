@@ -1,13 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+
   name: myresumeapp
   labels: 
     app: myresumeapp
+
 spec:
   replicas: 1
   selector:
     matchLabels:
+
       app: myresumeapp
   template:
     metadata:
@@ -19,6 +22,7 @@ spec:
         image: {{ .Values.appimage}}:{{ .Values.apptag}}
         ports:
         - name: myresumeapp-port
+
           containerPort: 8080
       initContainers:
       - name: init-mydb
@@ -27,3 +31,4 @@ spec:
       - name: init-memcache
         image: busybox
         command: ['sh', '-c', 'until nslookup myresumecache01.$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace).svc.cluster.local; do echo waiting for mydb; sleep 2; done;']
+

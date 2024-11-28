@@ -6,6 +6,7 @@ sudo apt upgrade -y
 
 # Install Java ands Tomcat
 sudo apt install openjdk-11-jdk -y
+
 sudo apt install tomcat10 tomcat10-admin tomcat10-docs tomcat10-common git -y
 
 
@@ -18,3 +19,4 @@ echo "<html><body><h1>Tomcat fonctionne via apt sur Ubuntu APT !</h1></body></ht
 
 # Verify  Tomcat is active
 sudo systemctl status tomcat10
+

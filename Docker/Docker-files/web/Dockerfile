@@ -1,4 +1,5 @@
 FROM nginx
+
 LABEL "Project"="MyResume"
 LABEL "Author"="Sirine"
 
@@ -13,3 +14,4 @@ RUN chmod +x /entrypoint.sh
 
 # Commande par défaut
 CMD ["/entrypoint.sh"]
+
