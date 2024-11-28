@@ -1,12 +1,14 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: vprodb
+
+  name: myresumedb
 spec:
   ports:
   - port: 3306
-    targetPort: vprodb-port
+    targetPort: myresumedb-port
     protocol: TCP
   selector:
-    app: vprodb
+    app: myresumedb
+
   type: ClusterIP

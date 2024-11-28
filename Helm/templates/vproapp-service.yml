@@ -8,5 +8,6 @@ spec:
     protocol: TCP
     targetPort: 8080
   selector:
-    app: vproapp
+    app: myresumeapp
+
   type: ClusterIP
